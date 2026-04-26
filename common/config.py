@@ -14,9 +14,10 @@ Two distinct COS endpoints are exposed because the project uses both:
 * **Space COS** — the watsonx.ai space-scoped bucket (used for text extraction
   job I/O). Credentials come from `client.spaces.get_details(...)`.
 
-* **Master COS** — the standalone HMAC-authenticated `failure-case-images`
-  bucket in `ca-tor` where processed images live. Credentials come from
-  `MASTER_COS_*` env vars.
+* **Master COS** — a standalone HMAC-authenticated bucket where processed
+  images are uploaded for downstream consumption (e.g. signed URLs in agent
+  responses). Endpoint, bucket and credentials come from `MASTER_COS_*` env
+  vars; nothing is hard-coded.
 """
 
 from __future__ import annotations
@@ -108,7 +109,13 @@ def get_api_client(space_id: Optional[str] = None, *, project_id: Optional[str] 
 # ---------------------------------------------------------------------------
 
 def _default_space_bucket() -> str:
-    return os.environ.get("COS_BUCKET_NAME", "new-hkmg-bucket")
+    bucket = os.environ.get("COS_BUCKET_NAME")
+    if not bucket:
+        raise RuntimeError(
+            "COS_BUCKET_NAME is not set. Add it to your .env "
+            "(the bucket attached to your watsonx Space)."
+        )
+    return bucket
 
 
 def get_space_cos_client(
@@ -148,7 +155,7 @@ def get_space_cos_client(
 
 def get_master_cos_resource(*, as_client: bool = False):
     """Return an `ibm_boto3` resource (default) or client for the master
-    `failure-case-images` COS bucket.
+    images COS bucket (HMAC-authenticated standalone bucket).
 
     Reads HMAC creds from env:
         MASTER_COS_ENDPOINT, MASTER_COS_ACCESS_KEY, MASTER_COS_SECRET_KEY

@@ -219,8 +219,11 @@ class ComprehensivePresentationAnalyzer(
         self.watsonx_available = False
         self.watsonx_client = None
         self.credentials = None
-        self.space_id = os.environ.get("SPACE_ID", "cc2766db-bac1-492d-b558-ec57adeb8555")
-        self.cos_bucket_name = os.environ.get("COS_BUCKET_NAME", "new-hkmg-bucket")
+        # SPACE_ID / COS_BUCKET_NAME must be configured in .env when watsonx
+        # is wired up. If missing, watsonx setup is skipped and the analyzer
+        # falls back to native python-pptx text extraction.
+        self.space_id = os.environ.get("SPACE_ID")
+        self.cos_bucket_name = os.environ.get("COS_BUCKET_NAME")
 
         if WATSONX_AVAILABLE:
             try:

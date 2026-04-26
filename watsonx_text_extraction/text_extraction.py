@@ -72,7 +72,13 @@ class NotebookTextExtraction:
         self.space_id = os.environ["SPACE_ID"]
         self.credentials = get_credentials()
         self.watsonx_client = APIClient(credentials=self.credentials, space_id=self.space_id)
-        self.cos_bucket_name = os.environ.get("COS_BUCKET_NAME", "new-hkmg-bucket")
+        try:
+            self.cos_bucket_name = os.environ["COS_BUCKET_NAME"]
+        except KeyError as exc:
+            raise RuntimeError(
+                "COS_BUCKET_NAME is required (set it in your .env, "
+                "e.g. COS_BUCKET_NAME=my-watsonx-space-bucket)."
+            ) from exc
         
         # Setup COS connection (from working analyzer)
         self.setup_cos()

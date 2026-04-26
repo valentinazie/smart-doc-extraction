@@ -1,0 +1,24 @@
+# Core IBM SDKs ────────────────────────────────────────────────────────────
+ibm-watsonx-ai>=1.0.10        # APIClient, TextExtractionsV2, Credentials, VLM
+ibm-cos-sdk>=2.13.0           # ibm_boto3 / ibm_botocore (COS S3 client)
+
+# Configuration ────────────────────────────────────────────────────────────
+python-dotenv>=1.0.0          # .env loading
+
+# Document parsing ─────────────────────────────────────────────────────────
+PyMuPDF>=1.24.0               # `fitz` — PDF page rendering, text + spatial
+pdfplumber>=0.11.0            # PDF table extraction
+python-pptx>=0.6.23           # PPTX shape/box/structure
+python-docx>=1.1.2            # DOCX (used by the watsonx pipeline's legacy
+                              #        DOCX→PDF fallback)
+openpyxl>=3.1.2               # XLSX read + per-sheet workbook splitting
+pandas>=2.1.0                 # XLSX/XLSM/XLS DataFrame handling
+xlrd>=2.0.1                   # Legacy .xls reader (kept for fallback)
+
+# Rendering / image stack ──────────────────────────────────────────────────
+Pillow>=10.2.0                # PIL — image crop, save, resize
+pdf2image>=1.17.0             # Slide → PNG via Poppler (used by PPTX path)
+reportlab>=4.0.0              # python-pptx / python-docx → text-only PDF
+                              # fallback inside watsonx_text_extraction
+numpy>=1.26.0                 # geometry / spatial math
+matplotlib>=3.8.0             # debug visualizations (smart-groups overlays)
