@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# macOS
+.DS_Store
+
+# Run artifacts / logs
+run_log.txt
+*.log
+
+# Pipeline outputs (regenerated per run)
+output/
+**/output/
+excel_extraction/output/
+pdf_extraction/output/
+ppt_extraction/output/
+
+# DOCX pipeline COS download cache (regenerated on demand)
+watsonx_text_extraction/cos_downloads/
+watsonx_text_extraction/sdu_extraction_result/
+
+# Intermediate prototypes / backups
+_past/
+pdf_extraction_prototype/
+*.bak
+
+# Keep the small curated sample used as documentation
+!ppt_extraction/output_sample/
+!ppt_extraction/output_sample/**
