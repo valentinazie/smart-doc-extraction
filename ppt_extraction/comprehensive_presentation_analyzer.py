@@ -104,7 +104,7 @@ def get_credentials():
     return get_watsonx_credentials()
 
 
-from mixins import (
+from ppt_extraction.mixins import (
     ConversionMixin,
     TextExtractionMixin,
     SpatialMixin,
