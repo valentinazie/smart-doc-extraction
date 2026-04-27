@@ -28,17 +28,19 @@ class ReadingOrderMixin:
         horizontal_lines = []
         vertical_lines = []
         
-        # Add explicit line shapes
+        # Add explicit line shapes. Use stricter aspect-ratio thresholds so
+        # that near-square shapes (e.g. small icons / boxes) don't get
+        # misclassified as dividers — only clearly elongated shapes count.
         for line in line_elements:
             pos = line['position']
             width = max(pos['width'], 1)
             height = max(pos['height'], 1)
             aspect_ratio = width / height
-            
-            if aspect_ratio > 2.0:  # Horizontal line (가로)
+
+            if aspect_ratio > 3.0:        # truly horizontal (width >> height)
                 horizontal_lines.append(line)
                 print(f"         📏 Explicit horizontal divider: {line['box_id']} (ratio={aspect_ratio:.2f})")
-            elif aspect_ratio < 3.0:  # Vertical line (세로)
+            elif aspect_ratio < (1.0 / 3.0):  # truly vertical (height >> width)
                 vertical_lines.append(line)
                 print(f"         📏 Explicit vertical divider: {line['box_id']} (ratio={aspect_ratio:.2f})")
         
@@ -117,16 +119,38 @@ class ReadingOrderMixin:
         y_boundaries.append(max_y + 100000)  # Bottom boundary
         y_boundaries.sort()
         
-        # Create X boundaries from vertical lines
+        # Create X boundaries from vertical lines (mirrors the Y/horizontal
+        # logic above: use explicit lines if present, otherwise fall back to
+        # auto-detecting natural column gaps from group X-centers).
         x_boundaries = [min_x - 100000]  # Left boundary
-        
+
         if vertical_lines:
             sorted_v_lines = sorted(vertical_lines, key=lambda l: l['position']['left'])
             for v_line in sorted_v_lines:
                 line_center_x = v_line['position']['left'] + v_line['position']['width'] // 2
                 x_boundaries.append(line_center_x)
                 print(f"            📐 Column boundary at X={line_center_x} (from {v_line['box_id']})")
-        
+        else:
+            # Auto-detect natural vertical boundaries by clustering X centers.
+            # This recovers the human reading order on multi-column layouts
+            # where the visual column separator is whitespace rather than an
+            # explicit line shape (very common in PDFs and screenshot-style
+            # PPTX slides).
+            x_positions = sorted([center[0] for center in all_group_centers])
+            x_gaps = []
+            for i in range(len(x_positions) - 1):
+                gap_size = x_positions[i + 1] - x_positions[i]
+                x_gaps.append((gap_size, (x_positions[i] + x_positions[i + 1]) / 2))
+            x_gaps.sort(reverse=True)  # Largest gaps first
+
+            natural_v_boundaries = []
+            for gap_size, gap_center in x_gaps[:3]:  # Max 3 natural columns → 4 cols
+                if gap_size > (max_x - min_x) * 0.15:  # Only significant gaps (>15% of total width)
+                    natural_v_boundaries.append(gap_center)
+                    print(f"            📐 Natural column boundary at X={gap_center:.0f} (gap={gap_size:.0f})")
+
+            x_boundaries.extend(sorted(natural_v_boundaries))
+
         x_boundaries.append(max_x + 100000)  # Right boundary
         x_boundaries.sort()
         
@@ -484,12 +508,27 @@ class ReadingOrderMixin:
                 y_boundaries.append(y_center)
         y_boundaries.append(max_y + 100000)  # End boundary
         
-        # Create X boundaries from vertical lines  
+        # Create X boundaries from vertical lines, with auto-fallback to
+        # natural X-gap detection when no explicit vertical line is present
+        # (mirrors the auto-row-detection in create_section_grid).
         x_boundaries = [min_x - 100000]  # Start boundary
         if vertical_lines:
             for v_line in sorted(vertical_lines, key=lambda l: l['position']['left']):
                 x_center = v_line['position']['left'] + v_line['position']['width'] // 2
                 x_boundaries.append(x_center)
+        else:
+            x_positions = sorted([c[0] for c in all_group_centers])
+            x_gaps = [
+                (x_positions[i + 1] - x_positions[i],
+                 (x_positions[i] + x_positions[i + 1]) / 2)
+                for i in range(len(x_positions) - 1)
+            ]
+            x_gaps.sort(reverse=True)
+            for gap_size, gap_center in x_gaps[:3]:
+                if gap_size > (max_x - min_x) * 0.15:
+                    x_boundaries.append(gap_center)
+                    print(f"            📐 Natural column boundary at X={gap_center:.0f} (gap={gap_size:.0f})")
+            x_boundaries.sort()
         x_boundaries.append(max_x + 100000)  # End boundary
         
         print(f"            🗂️  Grid: {len(y_boundaries)-1} rows × {len(x_boundaries)-1} columns")
